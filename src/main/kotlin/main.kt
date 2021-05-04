@@ -10,13 +10,14 @@ fun main() {
     // 페이지 처리를 우한 테스트 데이터 만들기
     makeTestArticles()
 
-    loop@while (true) {
+    loop@ while (true) {
 
         print("명령어 ) ")
-        var command = readLine()!!.trim()
+        val command = readLine()!!.trim()
         println("입력한 명령어 : $command")
 
         when {
+
             // 프로그램 종료
             command == "q" -> {
                 println("프로그램을 종료합니다.")
@@ -27,9 +28,9 @@ fun main() {
             command == "wr" -> {
 
                 print("제목 : ")
-                var title = readLine()!!.trim()
+                val title = readLine()!!.trim()
                 print("내용 : ")
-                var body = readLine()!!.trim()
+                val body = readLine()!!.trim()
 
                 val id = addArticle(title, body) // 글 작성
 
@@ -71,7 +72,7 @@ fun main() {
                 val id = readLine()!!.trim().toInt()
 
                 // 해당 게시물 존재 여부 확인
-                var articleToDelete: Article? = getArticleById(id)
+                val articleToDelete: Article? = getArticleById(id)
 
                 if (articleToDelete == null) {
                     println("$id 번 게시물은 존재하지 않습니다.")
@@ -90,7 +91,7 @@ fun main() {
                 val id = readLine()!!.trim().toInt()
 
                 // 해당 게시물 존재 여부 확인
-                var articleToModify : Article? = getArticleById(id)
+                val articleToModify: Article? = getArticleById(id)
 
                 if (articleToModify == null) {
                     println("$id 번 게시물은 존재하지 않습니다.")
@@ -114,7 +115,7 @@ fun main() {
                 val id = readLine()!!.trim().toInt()
 
                 // 해당 게시물 존재 여부 확인
-                var articleToDetail : Article? = getArticleById(id)
+                val articleToDetail: Article? = getArticleById(id)
 
                 if (articleToDetail == null) {
                     println("$id 번 게시물은 존재하지 않습니다.")
@@ -139,7 +140,7 @@ fun main() {
                 print("검색어 입력 : ")
                 val searchKeyWord = readLine()!!.trim()
 
-                var page = 1
+                val page = 1
                 val itemCountInPage = 10  // 페이지당 보여 줄 게시글 수
                 val offSetCount = (page - 1) * itemCountInPage  // 요청페이지 직전 페이지까지의 아이템수 (건너뛸 수)
 
@@ -163,7 +164,6 @@ fun main() {
             }
 
 
-
             else -> {
                 println("$command 는 존재하지 않는 명령어입니다.")
             }
@@ -177,42 +177,44 @@ fun main() {
 // 페이징 처리 함수
 fun getArticles(searchKeyWord: String, offSetCount: Int, itemCountInPage: Int): List<Article> {
 
-    val startIndex = articles.lastIndex - offSetCount
+    var filterKeyWordArticles = articles  // 검색하기 위해 전체 게시물을 담는다.
+
+    // 검색어가 있는 경우 (검색처리)
+    if (searchKeyWord.isNotBlank()) {
+
+        // 검색어로 요청된 게시글을 담을 임시 버퍼
+        filterKeyWordArticles = mutableListOf()  // 앞에서 담은 articles 내용을 무시하고 새로 할당
+        for (article in articles) {
+            if (article.title.contains(searchKeyWord)) {
+                filterKeyWordArticles.add(article)
+            }
+        }
+    }else{
+        println("검색어를 입력해 주세요")
+        return emptyList()
+    }
+
+    // 역순으로 정렬된 게시글을 담을 임시 버퍼 (페이징 처리)
+    val filterArticles = mutableListOf<Article>()
+    val startIndex = filterKeyWordArticles.lastIndex - offSetCount  // 검색어 체크가 적용된 filterKeyWordArticles이 와야함
     var endIndex = (startIndex - itemCountInPage) + 1
 
     // 마지막 인덱스가 0 보다 작으면 에러 방지를 위해 0으로 셋팅
     if (endIndex < 0) endIndex = 0
-    var filterArticles = articles
 
-    // 검색어가 있는 경우
-    if (searchKeyWord.isNotBlank()){
-
-        // 검색어로 요청된 게시글을 담을 임시 버퍼
-        val filterKeyWordArticles = mutableListOf<Article>()
-        for (article in articles){
-            if (article.title.contains(searchKeyWord)){
-                filterKeyWordArticles.add(article)
-            }
-        }
+    for (i in startIndex downTo endIndex) {  // 여기서 역순이 되면 호출한 곳에서 reverse할 필요 없음
+//    for (i in endIndex .. startIndex){  // 정순이기 때문에 호출한 곳에서 reverse해서 역순을 만들어 줌
+        filterArticles.add(filterKeyWordArticles[i])
     }
 
-        // 역순으로 정렬된 게시글을 담을 임시 버퍼
-        val filterArticles = mutableListOf<Article>()
-
-        for (i in startIndex downTo endIndex){  // 여기서 역순이 되면 호출한 곳에서 reverse할 필요 없음
-//    for (i in endIndex .. startIndex){  // 정순이기 때문에 호출한 곳에서 reverse해서 역순을 만들어 줌
-            filterArticles.add(articles[i])
-        }
-
-        return filterArticles
-
+    return filterArticles
 
 }
 
 
 // 테스트 데이터를 만들기 위한 함수
-fun makeTestArticles(){
-    for (id in 1..25){
+fun makeTestArticles() {
+    for (id in 1..25) {
         val title = "제목 _${id}"
         val body = "내용==========${id}"
 
@@ -221,10 +223,9 @@ fun makeTestArticles(){
 }
 
 
-
 // 글 작성
-fun addArticle(title: String, body: String) : Int {
-    var id = ++articlesLastId
+fun addArticle(title: String, body: String): Int {
+    val id = ++articlesLastId
     val regDate = Util.getNowDateStr()
     val updateDate = Util.getNowDateStr()
 
@@ -236,9 +237,8 @@ fun addArticle(title: String, body: String) : Int {
 }
 
 
-
 // 해당 게시물 존재 여부 확인
-fun getArticleById(id : Int) : Article?{
+fun getArticleById(id: Int): Article? {
 
     for (article in articles) {
 
