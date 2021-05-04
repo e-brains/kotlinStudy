@@ -24,7 +24,7 @@ fun main() {
             }
 
             // 글 작성
-            command == "w" -> {
+            command == "wr" -> {
 
                 print("제목 : ")
                 var title = readLine()!!.trim()
@@ -43,10 +43,11 @@ fun main() {
                 print("요청 페이지 번호 : ")
                 val page = readLine()!!.trim().toInt()
 
+                val searchKeyWord = ""
                 val itemCountInPage = 10  // 페이지당 보여 줄 게시글 수
-                val reqIndex = (page - 1) * itemCountInPage
+                val offSetCount = (page - 1) * itemCountInPage  // 요청페이지 직전 페이지까지의 아이템수 (건너뛸 수)
 
-                val articles = getArticles(reqIndex, itemCountInPage)
+                val articles = getArticles(searchKeyWord, offSetCount, itemCountInPage)
 
 
 
@@ -54,7 +55,12 @@ fun main() {
 //                articles.withIndex().reversed().forEach {
 //                    println("${it.value.id} / ${it.value.regDate} / ${it.value.updateDate} / ${it.value.title}")
 //                }
-                for (article in articles.reversed()) {
+                // getArticles에서 정순 처리하면 여기서 reversed사용해서 역순으로 만들어줌
+//                for (article in articles.reversed()) {
+//                    println("${article.id} / ${article.regDate} / ${article.updateDate} / ${article.title}")
+//                }
+                // getArticles에서 역순 처리하면 여기서 reversed 할 필요 없음
+                for (article in articles) {
                     println("${article.id} / ${article.regDate} / ${article.updateDate} / ${article.title}")
                 }
             }
@@ -79,7 +85,7 @@ fun main() {
             }
 
             // 글 수정
-            command == "m" -> {
+            command == "mo" -> {
                 print(" 수정할 게시물 id를 입력해 주세요 : ")
                 val id = readLine()!!.trim().toInt()
 
@@ -103,7 +109,7 @@ fun main() {
             }
 
             // 글 상세보기
-            command == "t" -> {
+            command == "dt" -> {
                 print(" 상세보기 할 게시물 id를 입력해 주세요 : ")
                 val id = readLine()!!.trim().toInt()
 
@@ -127,6 +133,37 @@ fun main() {
 
             }
 
+            // 검색기능
+            command == "sc" -> {
+
+                print("검색어 입력 : ")
+                val searchKeyWord = readLine()!!.trim()
+
+                var page = 1
+                val itemCountInPage = 10  // 페이지당 보여 줄 게시글 수
+                val offSetCount = (page - 1) * itemCountInPage  // 요청페이지 직전 페이지까지의 아이템수 (건너뛸 수)
+
+
+                val articles = getArticles(searchKeyWord, offSetCount, itemCountInPage)
+
+
+
+                println("번호 /       작성날짜 /        수정날짜          / 제목 ")
+//                articles.withIndex().reversed().forEach {
+//                    println("${it.value.id} / ${it.value.regDate} / ${it.value.updateDate} / ${it.value.title}")
+//                }
+                // getArticles에서 정순 처리하면 여기서 reversed사용해서 역순으로 만들어줌
+//                for (article in articles.reversed()) {
+//                    println("${article.id} / ${article.regDate} / ${article.updateDate} / ${article.title}")
+//                }
+                // getArticles에서 역순 처리하면 여기서 reversed 할 필요 없음
+                for (article in articles) {
+                    println("${article.id} / ${article.regDate} / ${article.updateDate} / ${article.title}")
+                }
+            }
+
+
+
             else -> {
                 println("$command 는 존재하지 않는 명령어입니다.")
             }
@@ -138,24 +175,38 @@ fun main() {
 }
 
 // 페이징 처리 함수
-fun getArticles(reqIndex: Int, itemCountInPage: Int): List<Article> {
-    val startIndex = articles.lastIndex - reqIndex
-    var endIndex = startIndex - itemCountInPage + 1
+fun getArticles(searchKeyWord: String, offSetCount: Int, itemCountInPage: Int): List<Article> {
+
+    val startIndex = articles.lastIndex - offSetCount
+    var endIndex = (startIndex - itemCountInPage) + 1
 
     // 마지막 인덱스가 0 보다 작으면 에러 방지를 위해 0으로 셋팅
-    if (endIndex < 0){
-        endIndex = 0
+    if (endIndex < 0) endIndex = 0
+    var filterArticles = articles
+
+    // 검색어가 있는 경우
+    if (searchKeyWord.isNotBlank()){
+
+        // 검색어로 요청된 게시글을 담을 임시 버퍼
+        val filterKeyWordArticles = mutableListOf<Article>()
+        for (article in articles){
+            if (article.title.contains(searchKeyWord)){
+                filterKeyWordArticles.add(article)
+            }
+        }
     }
 
-    // 요청된 페이지의 게시글을 담을 임시 버퍼
-    val filterArticles = mutableListOf<Article>()
+        // 역순으로 정렬된 게시글을 담을 임시 버퍼
+        val filterArticles = mutableListOf<Article>()
 
-    //for (i in startIndex downTo endIndex){  // 여기서 역순이 되면 호출한 곳에서 reverse할 필요 없음
-    for (i in endIndex .. startIndex){  // 정순이기 때문에 호출한 곳에서 reverse해서 역순을 만들어 줌
-        filterArticles.add(articles[i])
-    }
+        for (i in startIndex downTo endIndex){  // 여기서 역순이 되면 호출한 곳에서 reverse할 필요 없음
+//    for (i in endIndex .. startIndex){  // 정순이기 때문에 호출한 곳에서 reverse해서 역순을 만들어 줌
+            filterArticles.add(articles[i])
+        }
 
-    return filterArticles
+        return filterArticles
+
+
 }
 
 
